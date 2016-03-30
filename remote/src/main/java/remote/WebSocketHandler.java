@@ -15,7 +15,7 @@ public class WebSocketHandler {
 
     @OnWebSocketConnect
     public void onConnect(Session user) throws Exception {
-    	sessions.add(user);
+    	//sessions.add(user);
     }
 
     @OnWebSocketClose

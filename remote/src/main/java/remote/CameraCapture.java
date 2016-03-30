@@ -1,32 +1,21 @@
 package remote;
 
-import java.awt.Color;
-import java.awt.Image;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.SwingConstants;
 
 import org.apache.commons.codec.binary.Base64;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
-import org.opencv.core.MatOfKeyPoint;
-import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfRect;
+import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.features2d.FeatureDetector;
-import org.opencv.features2d.Features2d;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.videoio.VideoCapture;
 /**
  * The controller associated with the only view of our application. The
@@ -41,7 +30,7 @@ import org.opencv.videoio.VideoCapture;
  */
 
 @SuppressWarnings("serial")
-public class CameraCapture extends JFrame
+public class CameraCapture
 {
 	// a timer for acquiring the video stream
 	private ScheduledExecutorService timer;
@@ -77,6 +66,7 @@ public class CameraCapture extends JFrame
 							MatOfByte buffer = new MatOfByte();
 							Mat resizeimage = new Mat();
 							Size sz = new Size(200,200);
+							detectFace(resizeimage);
 							Imgproc.resize( imageToShow, resizeimage, sz );
 							mat2Image(resizeimage, buffer);
 							WebSocketHandler.broadcastMessage(Base64.encodeBase64String(buffer.toArray()));
@@ -86,7 +76,7 @@ public class CameraCapture extends JFrame
 				};
 				
 				this.timer = Executors.newSingleThreadScheduledExecutor();
-				this.timer.scheduleAtFixedRate(frameGrabber, 0, 33, TimeUnit.MILLISECONDS);
+				this.timer.scheduleAtFixedRate(frameGrabber, 0, 40, TimeUnit.MILLISECONDS);
 			}
 			else
 			{
@@ -118,7 +108,7 @@ public class CameraCapture extends JFrame
 	/**
 	 * Get a frame from the opened video stream (if any)
 	 * 
-	 * @return the {@link Image} to show
+	 * @return the {@link } to show
 	 */
 	private Mat grabFrame()
 	{
@@ -147,6 +137,16 @@ public class CameraCapture extends JFrame
 	private void mat2Image(Mat frame, MatOfByte buffer)
 	{
 		// encode the frame in the buffer, according to the PNG format
-		Imgcodecs.imencode(".png", frame, buffer);
+		Imgcodecs.imencode(".jpg", frame, buffer);
+	}
+	
+	private void detectFace(Mat frame) {
+		CascadeClassifier faceDetector = new CascadeClassifier(CameraCapture.class.getResource("/lbpcascade_frontalface.xml").getPath());
+		MatOfRect faceDetections = new MatOfRect();
+        faceDetector.detectMultiScale(frame, faceDetections);
+        for (Rect rect : faceDetections.toArray()) {
+            Imgproc.rectangle(frame, new Point(rect.x, rect.y), new Point(rect.x + rect.width, rect.y + rect.height),
+                    new Scalar(0, 255, 0));
+        }
 	}
 }

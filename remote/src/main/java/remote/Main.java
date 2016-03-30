@@ -1,6 +1,8 @@
 package remote;
 
-import static spark.Spark.*;
+import static spark.Spark.get;
+import static spark.Spark.staticFileLocation;
+import static spark.Spark.webSocket;
 
 import java.util.HashMap;
 import java.util.Map;

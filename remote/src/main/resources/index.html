@@ -33,8 +33,36 @@
         	}
         </style>
         <script src="touch-emulator.js"></script>
-        <script src="https://code.jquery.com/jquery-2.2.1.min.js" integrity="sha256-gvQgAFzTH6trSrAWoH1iPo9Xc96QxSZ3feW6kem+O00=" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+        <script src="jquery.js"></script>
+        <!-- script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script-->
+		<script type="text/javascript">
+			var updateImage;
+			var webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port + "/chat/");
+			webSocket.onmessage = function (msg) { updateImage(msg); };
+			webSocket.onclose = function () { alert("WebSocket connection closed") };
+	
+			//Update the chat-panel, and the list of connected users
+			updateImage = function(msg) {
+			    var data = msg.data;
+		    	$("#image").append($("<img src='data:image/jpg;base64," + data + "'/>"));
+			    var img = $("#image").children();
+			    if (img.length > 2) {
+			    	$(img[0]).remove();
+			    }
+			    webSocket.send("ready");
+			}
+			var sendReady = function() {
+				try {
+					webSocket.send("ready");
+				} catch (e) {
+					setTimeout(sendReady, 100);
+				}
+			}
+			sendReady();
+			sendCommand = function(command) {
+				webSocket.send(command);
+			};
+		</script>     
 		<script type="text/javascript">
 			window.mobilecheck = function() {
 				  var check = false;
@@ -75,7 +103,14 @@
 				
 				var drawCurrent = function(event) {
 					if (event) {
-						var touch = _.find(event.originalEvent.changedTouches, {identifier: joystick});
+						// var touch = _.find(event.originalEvent.changedTouches, {identifier: joystick});
+						var touch;
+						for (var i = 0; i < event.originalEvent.changedTouches.length;i++) {
+							if (event.originalEvent.changedTouches[i].identifier === joystick) {
+								touch = event.originalEvent.changedTouches[i]; 
+								break;
+							}
+						}
 						if (!touch) return;
 						
 						current = {
@@ -100,8 +135,14 @@
 				});
 				$("#joystick").bind('touchend', function(event){
 					if (joystick === undefined) return;
-					if (_.find(event.originalEvent.changedTouches, {identifier: joystick})) {
-						joystick = undefined;
+					//if (_.find(event.originalEvent.changedTouches, {identifier: joystick})) {
+					//	joystick = undefined;
+					//}
+					for (var i = 0; i < event.originalEvent.changedTouches.length;i++) {
+						if (event.originalEvent.changedTouches[i].identifier === joystick) {
+							joystick = undefined;
+							break;
+						}
 					}
 					current = {x:0,y:0};
 					drawCurrent();
@@ -114,34 +155,6 @@
 			});
 		</script>
 		
-		<script type="text/javascript">
-			var updateImage;
-			var webSocket = new WebSocket("ws://" + location.hostname + ":" + location.port + "/chat/");
-			webSocket.onmessage = function (msg) { updateImage(msg); };
-			webSocket.onclose = function () { alert("WebSocket connection closed") };
-	
-			//Update the chat-panel, and the list of connected users
-			updateImage = function(msg) {
-			    var data = msg.data;
-			    var img = $("#image").children();
-			    if (img.length > 1) {
-			    	$(img[0]).remove();
-			    	$("#image").append($("<img src='data:image/png;base64," + data + "'/>"));
-			    } else {
-			    	$("#image").append($("<img src='data:image/png;base64," + data + "'/>"));
-			    }
-			    webSocket.send("ready");
-			}
-			var sendReady = function() {
-				try {
-					webSocket.send("ready");
-				} catch (e) {
-					setTimeout(sendReady, 100);
-				}
-			}
-			sendReady();
-			
-		</script>     
     </head>
     <body>
     
